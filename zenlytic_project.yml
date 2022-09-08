@@ -1,0 +1,15 @@
+# This matches the profile in the dbt_project but it doesn't have to, it's just the name of the project in Zenlytic
+name: jaffle_shop
+# This only needs to be set to dbt if you're defining your views (tables) inside of dbt's yaml files
+mode: dbt
+
+# This matches the profile in the dbt_project but it doesn't have to
+# It refers to the connection_name property you set in the Zenlytic UI
+# If this isn't set it will default to the profile set in dbt_project.yml
+profile: jaffle_shop
+
+# Where to find dashboards defined as code 
+dashboard-paths: ['dashboards']
+
+# Where to find the metric and dimension definitions
+view-paths: ['models']
