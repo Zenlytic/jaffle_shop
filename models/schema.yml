@@ -3,6 +3,11 @@ version: 2
 models:
   - name: customers
     description: This table has basic information about a customer, as well as some derived facts based on a customer's orders
+    meta:
+      identifiers:
+        - name: customer_id
+          type: primary
+          sql: ${customer_id}
 
     columns:
       - name: customer_id
@@ -13,9 +18,15 @@ models:
 
       - name: first_name
         description: Customer's first name. PII.
+        is_dimension: true
 
       - name: last_name
         description: Customer's last name. PII.
+        is_dimension: true
+
+      - name: first_channel
+        description: Customer's channel for their first transaction.
+        is_dimension: true
 
       - name: first_order
         description: Date (UTC) of a customer's first order
@@ -31,6 +42,14 @@ models:
 
   - name: orders
     description: This table has basic information about orders, as well as some derived facts based on payments
+    meta:
+      identifiers:
+        - name: order_id
+          type: primary
+          sql: ${order_id}
+        - name: customer_id
+          type: foreign
+          sql: ${customer_id}
 
     columns:
       - name: order_id
@@ -55,6 +74,7 @@ models:
         tests:
           - accepted_values:
               values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+        is_dimension: yes
 
       - name: amount
         description: Total amount (AUD) of the order
@@ -80,3 +100,57 @@ models:
         description: Amount of the order (AUD) paid for by gift card
         tests:
           - not_null
+
+
+metrics:
+  - name: customer_count
+    label: Customer count
+    model: ref('customers')
+    description: "The number of customers"
+
+    type: count_distinct
+    sql: customer_id
+
+    timestamp: first_order
+    time_grains: [day, week, month, quarter, year]
+
+
+  - name: organic_customer_count
+    label: Organic customer count
+    model: ref('customers')
+    description: "Number of customers whose first order was organic"
+
+    type: count_distinct
+    sql: customer_id
+
+    timestamp: first_order
+    time_grains: [day, week, month, quarter, year]
+
+    filters:
+      - field: first_channel
+        operator: "="
+        value: "'Organic'"
+
+
+  - name: number_of_orders
+    label: Number of orders
+    model: ref('orders')
+    description: "Total number of orders"
+
+    type: count_distinct
+    sql: order_id
+
+    timestamp: order_date
+    time_grains: [day, week, month, quarter, year]
+
+
+  - name: total_order_amount
+    label: Total order amount
+    model: ref('orders')
+    description: "Total order amount using the orders table"
+
+    type: sum
+    sql: amount
+
+    timestamp: order_date
+    time_grains: [day, week, month, quarter, year]
